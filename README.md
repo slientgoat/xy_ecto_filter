@@ -10,7 +10,7 @@ by adding `ecto_filter` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:ecto_filter, "~> 0.0.0"}
+    {:ecto_filter, git: "https://github.com/slientgoat/xy_ecto_filter.git"}
   ]
 end
 ```
