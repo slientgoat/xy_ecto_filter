@@ -106,7 +106,8 @@ defmodule EctoFilter do
   # 过滤分类
   def filter_class_assoc(query, %{"class" => "is_null"}, _, assoc) do
     query
-    |> join(:left, [t], c in assoc(t, ^assoc), is_nil(c.class))
+    |> join(:left, [t], c in assoc(t, ^assoc))
+    |> where([t,c], is_nil(c.class))
   end
   def filter_class_assoc(query, %{"class" => "all"}, _, _), do: query
   def filter_class_assoc(query, %{"class" => val}, join_type, assoc) do
@@ -118,9 +119,10 @@ defmodule EctoFilter do
   def filter_class_assoc(query, _, _, _), do: query
 
   # 过滤分类
-  def filter_state_assoc(query, %{"state" => "is_null"}, join_type, assoc) do
+  def filter_state_assoc(query, %{"state" => "is_null"}, _, assoc) do
     query
-    |> join(join_type, [t], c in assoc(t, ^assoc), is_nil(c.state))
+    |> join(:left, [t], c in assoc(t, ^assoc))
+    |> where([t,c], is_nil(c.state))
   end
   def filter_state_assoc(query, %{"state" => "all"}, _, _), do: query
   def filter_state_assoc(query, %{"state" => val}, join_type, assoc) do
@@ -134,7 +136,8 @@ defmodule EctoFilter do
   # 过滤分类
   def filter_com_state_assoc(query, %{"com_state" => "is_null"}, _, assoc) do
     query
-    |> join(:left, [t], c in assoc(t, ^assoc), is_nil(c.state))
+    |> join(:left, [t], c in assoc(t, ^assoc))
+    |> where([t,c], is_nil(c.state))
   end
   def filter_com_state_assoc(query, %{"com_state" => "all"}, _, _), do: query
   def filter_com_state_assoc(query, %{"com_state" => val}, join_type, assoc) do
@@ -149,7 +152,8 @@ defmodule EctoFilter do
   # 过滤分类
   def filter_smr_state_assoc(query, %{"smr_state" => "is_null"}, _, assoc) do
     query
-    |> join(:left, [t], c in assoc(t, ^assoc), is_nil(c.state))
+    |> join(:left, [t], c in assoc(t, ^assoc))
+    |> where([t,c], is_nil(c.state))
   end
   def filter_smr_state_assoc(query, %{"smr_state" => "all"}, _, _), do: query
   def filter_smr_state_assoc(query, %{"smr_state" => val}, join_type, assoc) do
@@ -162,9 +166,10 @@ defmodule EctoFilter do
 
 
   # 过滤分类
-  def filter_by_assoc(query, %{"state" => "is_null"}, join_type, assoc) do
+  def filter_by_assoc(query, %{"state" => "is_null"}, _, assoc) do
     query
-    |> join(join_type, [t], c in assoc(t, ^assoc), is_nil(c.state))
+    |> join(:left, [t], c in assoc(t, ^assoc))
+    |> where([t,c], is_nil(c.state))
   end
   def filter_by_assoc(query, %{"state" => "all"}, _, _), do: query
   def filter_by_assoc(query, %{"state" => val}, join_type, assoc) do
