@@ -205,6 +205,13 @@ defmodule EctoFilter do
 
 
   @doc """
+  过滤时间-今日
+  tz: 时区差（秒），例如,东八区：tz=28800 西八区：tz=-28800
+  """
+  def filter_time_in_today(query, tz),
+      do: filter_time_from_today(query, %{interval: 0, tz: tz, now: NaiveDateTime.utc_now()})
+
+  @doc """
   过滤时间
   interval: 0:今日|-6：最近7天|-29：最近30天
   tz: 时区差（秒），例如,东八区：tz=28800 西八区：tz=-28800
