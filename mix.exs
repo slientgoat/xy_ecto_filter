@@ -22,7 +22,7 @@ defmodule EctoFilter.MixProject do
   defp deps do
     [
       {:timex, "~> 3.1"},
-      {:ecto, "~> 2.1"}
+      {:ecto_sql, "~> 3.0.0"}
     ]
   end
 end
