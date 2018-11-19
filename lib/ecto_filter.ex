@@ -94,8 +94,9 @@ defmodule EctoFilter do
     |> where([t], is_nil(t.wid))
   end
   def filter_wid(query, %{"wid" => "all"}), do: query
+  def filter_wid(query, %{"wid" => val}) when is_nil(val), do: query
   def filter_wid(query, %{"wid" => val}) do
-    val = String.to_integer(val)
+    val = if is_integer(val), do: val, else: String.to_integer(val)
     query
     |> where([t], t.wid == ^val)
   end
