@@ -1,5 +1,11 @@
 defmodule EctoFilter do
   import Ecto.Query, warn: false
+  @type search_time :: %{startTime: NaiveDateTime.t, endTime: NaiveDateTime.t, now: NaiveDateTime.t, tz: integer} | %{
+    interval: integer,
+    now: NaiveDateTime.t,
+    tz: integer
+  }
+
   @apidoc """
   @apiDescription 查询-排序-分页
   @api {get} rummage  查询-排序-分页
