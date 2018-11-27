@@ -5,65 +5,74 @@ defmodule EctoFilter do
     now: NaiveDateTime.t,
     tz: integer
   }
+#
+#  @apiDescription 查询-排序-分页
+#  @api {get} rummage  查询-排序-分页
+#  @apiVersion 0.0.1
+#  @apiGroup rummage
+#  @apiName rummage
+#  @apiSampleRequest off
+#  @apiParam {Object} [search] 刷选参数:
+#  @apiParam {Object} search.field1 `field1`和`field1_value`特殊值说明：`is_null:未空|all:全部`（使用参照下列示例）
+#  @apiParam {Object} search.scope 时间范围
+#  @apiParam {Date} search.scope.startTime 时间开始，格式："2017-1-1"
+#  @apiParam {Date} search.scope.endTime 时间结束，格式："2017-12-1"
+#  @apiParam {Number} search.interval 时间段 <br>
+#    情况1：`0:今日|-6：最近7天|-29：最近30天`  <br>
+#    情况2： `-1:昨日|-7：过去7天|-30：过去30天`
+#  @apiParam {Number} search.tz 时区差（秒），例如,东八区：tz=28800 西八区：tz=-28800
+#  @apiParam {Object} [sort] 排序参数(默认按记录id升序排序)-尚未实现:
+#  @apiParam {Object} sort.field1 `field1`是具体字段名，具体参考对应接口说明
+#  @apiParam {String} sort.field1.order 排序方式 asc|desc
+#  @apiParam {Object} paginate 分页参数:
+#  @apiParam {Number} paginate.page=1 所选页码数.
+#  @apiParam {Number} [paginate.page_size=20]  每页条目数
+#  @apiParamExample {json} 分页示例:
+#  // 每次最多显示1行为限制，获取第1页的留言记录
+#    {paginate: {page: 1,page_size: 1}}
+#  @apiParamExample {json} 查询-排序-分页示例
+#  // 获取昨天class=财务的留言记录： 以class=财务为刷选条件，按留言时间降序排序，每次最多显示20行为限制
+#  // 从下面示例可以看出：这时的field1 = class
+#  // 这时的field1_value = "财务"
+#  {
+#    search: {class: "财务",interval: -2},
+#    sort: {inserted_at: %{order: desc}},
+#    paginate: {page: 2,page_size: 20}
+#  }
+#
+#  // 获取2017-1-1至2017-12-1未分类的留言记录：以class=is_null为刷选条件，按留言时间降序排序，每次最多显示20行为限制
+#  {
+#    search: {class: "is_null",scope: {startTime: "2017-1-1",endTime: "2017-12-1"}},
+#    sort: {inserted_at: %{order: desc}},
+#    paginate: {page: 2,page_size: 20}
+#  }
+#  @apiParamExample {text} URL参数示例:
+#    ?paginate[page]=1&paginate[page_size]=1&search[class]=is_null&sort[class][order]=asc
+#  @apiSuccess {Object[]}  data 返回的数据，具体查看实际返回
+#  @apiHeader (Response Headers) {String} link 链接集
+#  @apiHeader (Response Headers) {Number} total 总共条目数
+#  @apiHeader (Response Headers) {Number} per-page 每页条目数
+#  @apiHeader (Response Headers) {Number} total_pages 总共页数
+#  @apiHeader (Response Headers) {Number} page-number 当前所选页码数
+#  @apiHeaderExample {text} Response Hearder Example:
+#  link: <http://localhost:4002/authed/leaves?page=2&paginate%5Bpage%5D=1&paginate%5Bpage_size%5D=1&rummage=&search=&search.class=&search.inserted_at=&search.state=&search%5Bclass%5D=is_null>; rel="next", <http://localhost:4002/authed/leaves?page=1&paginate%5Bpage%5D=1&paginate%5Bpage_size%5D=1&rummage=&search=&search.class=&search.inserted_at=&search.state=&search%5Bclass%5D=is_null>; rel="first", <http://localhost:4002/authed/leaves?page=2&paginate%5Bpage%5D=1&paginate%5Bpage_size%5D=1&rummage=&search=&search.class=&search.inserted_at=&search.state=&search%5Bclass%5D=is_null>; rel="last"
+#  total: 2
+#  per-page: 1
+#  total-pages: 2
+#  page-number: 1
 
-  @apidoc """
-  @apiDescription 查询-排序-分页
-  @api {get} rummage  查询-排序-分页
-  @apiVersion 0.0.1
-  @apiGroup rummage
-  @apiName rummage
-  @apiSampleRequest off
-  @apiParam {Object} [search] 刷选参数:
-  @apiParam {Object} search.field1 `field1`和`field1_value`特殊值说明：`is_null:未空|all:全部`（使用参照下列示例）
-  @apiParam {Object} search.scope 时间范围
-  @apiParam {Date} search.scope.startTime 时间开始，格式："2017-1-1"
-  @apiParam {Date} search.scope.endTime 时间结束，格式："2017-12-1"
-  @apiParam {Number} search.interval 时间段 <br>
-    情况1：`0:今日|-6：最近7天|-29：最近30天`  <br>
-    情况2： `-1:昨日|-7：过去7天|-30：过去30天`
-  @apiParam {Number} search.tz 时区差（秒），例如,东八区：tz=28800 西八区：tz=-28800
-  @apiParam {Object} [sort] 排序参数(默认按记录id升序排序)-尚未实现:
-  @apiParam {Object} sort.field1 `field1`是具体字段名，具体参考对应接口说明
-  @apiParam {String} sort.field1.order 排序方式 asc|desc
-  @apiParam {Object} paginate 分页参数:
-  @apiParam {Number} paginate.page=1 所选页码数.
-  @apiParam {Number} [paginate.page_size=20]  每页条目数
-  @apiParamExample {json} 分页示例:
-  // 每次最多显示1行为限制，获取第1页的留言记录
-    {paginate: {page: 1,page_size: 1}}
-  @apiParamExample {json} 查询-排序-分页示例
-  // 获取昨天class=财务的留言记录： 以class=财务为刷选条件，按留言时间降序排序，每次最多显示20行为限制
-  // 从下面示例可以看出：这时的field1 = class
-  // 这时的field1_value = "财务"
-  {
-    search: {class: "财务",interval: -2},
-    sort: {inserted_at: %{order: desc}},
-    paginate: {page: 2,page_size: 20}
-  }
-
-  // 获取2017-1-1至2017-12-1未分类的留言记录：以class=is_null为刷选条件，按留言时间降序排序，每次最多显示20行为限制
-  {
-    search: {class: "is_null",scope: {startTime: "2017-1-1",endTime: "2017-12-1"}},
-    sort: {inserted_at: %{order: desc}},
-    paginate: {page: 2,page_size: 20}
-  }
-  @apiParamExample {text} URL参数示例:
-    ?paginate[page]=1&paginate[page_size]=1&search[class]=is_null&sort[class][order]=asc
-  @apiSuccess {Object[]}  data 返回的数据，具体查看实际返回
-  @apiHeader (Response Headers) {String} link 链接集
-  @apiHeader (Response Headers) {Number} total 总共条目数
-  @apiHeader (Response Headers) {Number} per-page 每页条目数
-  @apiHeader (Response Headers) {Number} total_pages 总共页数
-  @apiHeader (Response Headers) {Number} page-number 当前所选页码数
-  @apiHeaderExample {text} Response Hearder Example:
-  link: <http://localhost:4002/authed/leaves?page=2&paginate%5Bpage%5D=1&paginate%5Bpage_size%5D=1&rummage=&search=&search.class=&search.inserted_at=&search.state=&search%5Bclass%5D=is_null>; rel="next", <http://localhost:4002/authed/leaves?page=1&paginate%5Bpage%5D=1&paginate%5Bpage_size%5D=1&rummage=&search=&search.class=&search.inserted_at=&search.state=&search%5Bclass%5D=is_null>; rel="first", <http://localhost:4002/authed/leaves?page=2&paginate%5Bpage%5D=1&paginate%5Bpage_size%5D=1&rummage=&search=&search.class=&search.inserted_at=&search.state=&search%5Bclass%5D=is_null>; rel="last"
-  total: 2
-  per-page: 1
-  total-pages: 2
-  page-number: 1
-  """
-  @doc false
-  def apidoc_example(), do: @apidoc
+  # 过滤分类
+  def filter_priority(query, %{"priority" => "is_null"}) do
+    query
+    |> where([t], is_nil(t.priority))
+  end
+  def filter_priority(query, %{"priority" => "all"}), do: query
+  def filter_priority(query, %{"priority" => val}) do
+    query
+    |> where([t], t.priority == ^val)
+  end
+  def filter_priority(query, %{"search" => search}), do: filter_priority(query, search)
+  def filter_priority(query, _), do: query
 
   # 过滤分类
   def filter_class(query, %{"class" => "is_null"}) do
