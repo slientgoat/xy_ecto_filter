@@ -278,46 +278,13 @@ defmodule EctoFilter do
       %Ecto.Query{}
   """
   def filter_time_from_today(query, nil), do: query
-
-  def filter_time_from_today(query, %{interval: interval, tz: tz, now: now}) when interval < 1 do
-    tz_begin =
-      Timex.beginning_of_day(now)
-      |> Timex.shift(seconds: -tz)
-      |> Timex.shift(days: interval)
-
-    tz_end =
-      Timex.end_of_day(now)
-      |> Timex.shift(seconds: -tz)
-
-    query
-    |> where([t], t.inserted_at >= ^tz_begin and t.inserted_at <= ^tz_end)
-  end
-
-  def filter_time_from_today(query, %{startTime: startTime, endTime: endTime, tz: tz, now: now}) do
-    tz_begin =
-      startTime
-      |> Timex.shift(seconds: -tz)
-
-    today_end =
-      Timex.end_of_day(now)
-      |> Timex.shift(seconds: tz)
-
-    tz_end =
-      case NaiveDateTime.compare(endTime, today_end) do
-        :lt -> endTime
-        _ -> today_end
-      end
-      |> Timex.shift(seconds: -tz)
-
-    query
-    |> where([t], t.inserted_at >= ^tz_begin and t.inserted_at <= ^tz_end)
-  end
-
   def filter_time_from_today(query, %{"search" => search}),
     do: filter_time_from_today(query, format_search_time(search))
 
   def filter_time_from_today(query, %{"paginate" => _}), do: query
-
+  def filter_time_from_today(query, search) do
+    filter_inserted_at(query, time_region_from_today(search))
+  end
   @doc """
   过滤时间
   interval: -1:昨日|-7：过去7天|-30：过去30天
@@ -331,52 +298,14 @@ defmodule EctoFilter do
       %Ecto.Query{}
   """
   def filter_time_from_yesterday(query, nil), do: query
-
-  def filter_time_from_yesterday(query, %{interval: interval, tz: tz, now: now})
-      when interval < 0 do
-    tz_begin =
-      Timex.beginning_of_day(now)
-      |> Timex.shift(seconds: -tz)
-      |> Timex.shift(days: interval)
-
-    tz_end =
-      Timex.end_of_day(now)
-      |> Timex.shift(days: -1)
-      |> Timex.shift(seconds: -tz)
-
-    query
-    |> where([t], t.inserted_at >= ^tz_begin and t.inserted_at <= ^tz_end)
-  end
-
-  def filter_time_from_yesterday(query, %{
-        startTime: startTime,
-        endTime: endTime,
-        tz: tz,
-        now: now
-      }) do
-    tz_begin =
-      startTime
-      |> Timex.shift(seconds: -tz)
-
-    yesterday_end =
-      Timex.beginning_of_day(now)
-      |> Timex.shift(seconds: tz)
-
-    tz_end =
-      case NaiveDateTime.compare(endTime, yesterday_end) do
-        :lt -> endTime
-        _ -> yesterday_end
-      end
-      |> Timex.shift(seconds: -tz)
-
-    query
-    |> where([t], t.inserted_at >= ^tz_begin and t.inserted_at <= ^tz_end)
-  end
-
   def filter_time_from_yesterday(query, %{"search" => search}),
     do: filter_time_from_yesterday(query, format_search_time(search))
 
   def filter_time_from_yesterday(query, %{"paginate" => _}), do: query
+  def filter_time_from_yesterday(query, search) do
+    filter_inserted_at(query, time_region_from_yesterday(search))
+  end
+
 
   def format_search_time(search) do
     args =
@@ -419,7 +348,58 @@ defmodule EctoFilter do
     end
   end
 
-  # TODO need add assoc in the future
+
+  defp filter_inserted_at(query, {tz_begin, tz_end}) do
+    query
+    |> where([t], t.inserted_at >= ^tz_begin and t.inserted_at <= ^tz_end)
+  end
+
+  def time_region_from_today(%{interval: interval, tz: tz, now: now}) when interval < 1 do
+    tz_begin = Timex.beginning_of_day(now)
+               |> Timex.shift(seconds: -tz)
+               |> Timex.shift(days: interval)
+    tz_end = Timex.end_of_day(now)
+             |> Timex.shift(seconds: -tz)
+    {tz_begin, tz_end}
+  end
+
+  def time_region_from_today(%{startTime: startTime, endTime: endTime, tz: tz, now: now}) do
+    tz_begin = startTime
+               |> Timex.shift(seconds: -tz)
+    today_end = Timex.end_of_day(now)
+                |> Timex.shift(seconds: tz)
+    tz_end = case NaiveDateTime.compare(endTime, today_end)  do
+               :lt -> endTime
+               _ -> today_end
+             end
+             |> Timex.shift(seconds: -tz)
+    {tz_begin, tz_end}
+  end
+
+  def time_region_from_yesterday(%{interval: interval, tz: tz, now: now}) when interval < 0 do
+    tz_begin = Timex.beginning_of_day(now)
+               |> Timex.shift(seconds: -tz)
+               |> Timex.shift(days: interval)
+    tz_end = Timex.end_of_day(now)
+             |> Timex.shift(days: -1)
+             |> Timex.shift(seconds: -tz)
+    {tz_begin, tz_end}
+  end
+
+  def time_region_from_yesterday(%{startTime: startTime, endTime: endTime, tz: tz, now: now}) do
+    tz_begin = startTime
+               |> Timex.shift(seconds: -tz)
+    yesterday_end = Timex.beginning_of_day(now)
+                    |> Timex.shift(seconds: tz)
+    tz_end = case NaiveDateTime.compare(endTime, yesterday_end)  do
+               :lt -> endTime
+               _ -> yesterday_end
+             end
+             |> Timex.shift(seconds: -tz)
+    {tz_begin, tz_end}
+  end
+
+  #TODO need add assoc in the future
   def sort(query, %{"sort" => sort}) do
     Enum.reduce(
       sort,
@@ -602,6 +582,30 @@ defmodule EctoFilter do
     end
 
     Enum.map(i..0, shif_date)
+  end
+
+  @doc """
+  汇总指定时间范围内两个时间之间的差值
+  ## Examples
+      iex> lists = [[~N[2018-12-11 02:41:56.284039], ~N[2018-12-11 02:42:16.623866]],[~N[2018-12-11 04:10:23.170037], ~N[2018-12-11 04:10:24.547511]]]
+      iex> {tz_begin, tz_end} = {~N[2018-12-10 16:00:00], ~N[2018-12-11 15:59:59.999999]}
+      iex> EctoFilter.collect_reigon_time(lists,{tz_begin, tz_end})
+      21
+  """
+  def collect_reigon_time(lists, {tz_begin, tz_end}) do
+    calc_tz_worktime = fn [state_time, updated_at], acc ->
+      cond do
+        state_time > tz_begin and updated_at < tz_end ->
+          NaiveDateTime.diff(updated_at, state_time) + acc
+        state_time > tz_begin and state_time < tz_end and updated_at > tz_end ->
+          NaiveDateTime.diff(tz_end, state_time) + acc
+        state_time < tz_begin and updated_at > tz_begin and updated_at < tz_end ->
+          NaiveDateTime.diff(updated_at, tz_begin) + acc
+        true ->
+          acc
+      end
+    end
+    Enum.reduce(lists, 0, calc_tz_worktime)
   end
 
   @doc false
