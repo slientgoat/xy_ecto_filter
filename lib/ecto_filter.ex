@@ -635,6 +635,81 @@ defmodule EctoFilter do
     Enum.reduce(lists, 0, calc_tz_worktime)
   end
 
+  @doc """
+  按日期累加
+  ## Examples
+      iex> lists =
+            [
+              %{"2018-12-12" => 1, "2018-12-13" => 1},
+              %{"2018-12-12" => 2, "2018-12-14" => 1},
+              %{"2018-12-11" => 1, "2018-12-13" => 3}
+            ]
+      iex> EctoFilter.collect_by_tz_date(lists)
+      %{"2018-12-11" => 1, "2018-12-12" => 3, "2018-12-13" => 4, "2018-12-14" => 1}
+  """
+  def collect_by_tz_date(lists) do
+    Enum.reduce(lists, %{}, fn x, acc -> Map.merge(x, acc, fn _k, v1, v2 -> v1 + v2 end) end)
+  end
+
+  @doc """
+  按用户时区的日期分组
+    lists: 从数据库提取的数据
+    tz: 时区差
+    value_group_by: 把分组后的值继续分组，nil:不分组
+
+    ## Examples
+      iex> lists =
+            [
+              %{inserted_at: ~N[2018-12-12 15:49:21.389333], wid: 1},
+              %{inserted_at: ~N[2018-12-12 17:49:21.389333], wid: 1},
+              %{inserted_at: ~N[2018-12-13 01:49:21.389333], wid: 1},
+              %{inserted_at: ~N[2018-12-13 02:49:21.389333], wid: 2},
+              %{inserted_at: ~N[2018-12-13 02:49:21.389333], wid: 2},
+              %{inserted_at: ~N[2018-12-13 02:49:21.389333], wid: 3},
+            ]
+      iex> tz = 28800
+      iex> value_group_by = :wid
+      iex> EctoFilter.group_by_tz_date(lists,tz)
+      %{
+        "2018-12-12" => %{
+          1 => [%{inserted_at: ~N[2018-12-12 15:49:21.389333], wid: 1}]
+        },
+        "2018-12-13" => %{
+          1 => [
+            %{inserted_at: ~N[2018-12-12 17:49:21.389333], wid: 1},
+            %{inserted_at: ~N[2018-12-13 01:49:21.389333], wid: 1}
+          ],
+          2 => [
+            %{inserted_at: ~N[2018-12-13 02:49:21.389333], wid: 2},
+            %{inserted_at: ~N[2018-12-13 02:49:21.389333], wid: 2}
+          ],
+          3 => [%{inserted_at: ~N[2018-12-13 02:49:21.389333], wid: 3}]
+        }
+      }
+
+  """
+  def group_by_tz_date(lists, tz, value_group_by \\ nil) when is_atom(value_group_by) do
+    key_fun = fn x ->
+      Timex.shift(x.inserted_at, seconds: tz)
+      |> NaiveDateTime.to_date()
+      |> Date.to_string()
+    end
+
+    data = Enum.group_by(lists, key_fun)
+
+    cond do
+      is_nil(value_group_by) ->
+        data
+
+      true ->
+        key_fun2 = fn value ->
+          Map.get(value, value_group_by)
+        end
+
+        Enum.reduce(data, %{}, fn {k, v}, acc -> Map.put(acc, k, Enum.group_by(v, key_fun2)) end)
+    end
+  end
+
   @doc false
   def apidoc_example(), do: @apidoc
 end
