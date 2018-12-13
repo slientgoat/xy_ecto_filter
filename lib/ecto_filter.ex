@@ -660,54 +660,67 @@ defmodule EctoFilter do
     ## Examples
       iex> lists =
             [
-              %{inserted_at: ~N[2018-12-12 15:49:21.389333], wid: 1},
-              %{inserted_at: ~N[2018-12-12 17:49:21.389333], wid: 1},
-              %{inserted_at: ~N[2018-12-13 01:49:21.389333], wid: 1},
-              %{inserted_at: ~N[2018-12-13 02:49:21.389333], wid: 2},
-              %{inserted_at: ~N[2018-12-13 02:49:21.389333], wid: 2},
-              %{inserted_at: ~N[2018-12-13 02:49:21.389333], wid: 3},
+              %{inserted_at: ~N[2018-12-12 15:49:21.389333], updated_at:  ~N[2018-12-12 15:59:21.389333], wid: 1},
+              %{inserted_at: ~N[2018-12-12 17:49:21.389333], updated_at:  ~N[2018-12-12 17:59:21.389333], wid: 1},
+              %{inserted_at: ~N[2018-12-13 01:49:21.389333], updated_at:  ~N[2018-12-13 01:59:21.389333], wid: 1},
+              %{inserted_at: ~N[2018-12-13 02:49:21.389333], updated_at:  ~N[2018-12-13 02:59:21.389333], wid: 2},
+              %{inserted_at: ~N[2018-12-13 03:49:21.389333], updated_at:  ~N[2018-12-13 03:59:21.389333], wid: 2},
+              %{inserted_at: ~N[2018-12-13 04:49:21.389333], updated_at:  ~N[2018-12-13 04:59:21.389333], wid: 3},
+              %{inserted_at: ~N[2018-12-12 15:49:21.389333], updated_at:  ~N[2018-12-13 04:59:21.389333], wid: 3},
             ]
       iex> tz = 28800
       iex> value_group_by = :wid
       iex> EctoFilter.group_by_tz_date(lists,tz)
       %{
-        "2018-12-12" => %{
-          1 => [%{inserted_at: ~N[2018-12-12 15:49:21.389333], wid: 1}]
-        },
-        "2018-12-13" => %{
-          1 => [
-            %{inserted_at: ~N[2018-12-12 17:49:21.389333], wid: 1},
-            %{inserted_at: ~N[2018-12-13 01:49:21.389333], wid: 1}
-          ],
-          2 => [
-            %{inserted_at: ~N[2018-12-13 02:49:21.389333], wid: 2},
-            %{inserted_at: ~N[2018-12-13 02:49:21.389333], wid: 2}
-          ],
-          3 => [%{inserted_at: ~N[2018-12-13 02:49:21.389333], wid: 3}]
+        %{
+          "2018-12-12" => %{
+            1 => [%{inserted_at: ~N[2018-12-12 15:49:21.389333], updated_at:  ~N[2018-12-12 15:59:21.389333], wid: 1}]
+            3 => [%{inserted_at: ~N[2018-12-12 15:49:21.389333], updated_at:  ~N[2018-12-13 04:59:21.389333], wid: 3}],
+          },
+          "2018-12-13" => %{
+            1 => [
+              %{inserted_at: ~N[2018-12-13 01:49:21.389333], updated_at:  ~N[2018-12-13 01:59:21.389333], wid: 1},
+              %{inserted_at: ~N[2018-12-12 17:49:21.389333], updated_at:  ~N[2018-12-12 17:59:21.389333], wid: 1},
+            ],
+            2 => [
+              %{inserted_at: ~N[2018-12-13 03:49:21.389333], updated_at:  ~N[2018-12-13 03:59:21.389333], wid: 2},
+              %{inserted_at: ~N[2018-12-13 02:49:21.389333], updated_at:  ~N[2018-12-13 02:59:21.389333], wid: 2},
+            ],
+            3 => [
+              %{inserted_at: ~N[2018-12-12 15:49:21.389333], updated_at:  ~N[2018-12-13 04:59:21.389333], wid: 3},
+              %{inserted_at: ~N[2018-12-13 04:49:21.389333], updated_at:  ~N[2018-12-13 04:59:21.389333], wid: 3},
+            ],
+          },
         }
       }
 
   """
   def group_by_tz_date(lists, tz, value_group_by \\ nil) when is_atom(value_group_by) do
-    key_fun = fn x ->
-      Timex.shift(x.inserted_at, seconds: tz)
-      |> NaiveDateTime.to_date()
-      |> Date.to_string()
+    f = fn x, acc ->
+      s_date = Timex.shift(x.inserted_at, seconds: tz)
+               |> NaiveDateTime.to_date()
+      e_date = Timex.shift(x.updated_at, seconds: tz)
+               |> NaiveDateTime.to_date()
+      count = Date.range(s_date, e_date)
+              |> Enum.count()
+      f2 = fn n, acc ->
+        date_key = Date.to_string(Date.add(s_date, n))
+        l = Map.get(acc, date_key) || []
+        Map.put(acc, date_key, [x | l])
+      end
+      Enum.reduce(0..count - 1, acc, f2)
+    end
+    Enum.reduce(lists, %{}, f)
+    |> value_group_by(value_group_by)
+  end
+
+  def value_group_by(lists, nil), do: lists
+  def value_group_by(lists, key) do
+    key_fun2 = fn value ->
+      Map.get(value, key)
     end
 
-    data = Enum.group_by(lists, key_fun)
-
-    cond do
-      is_nil(value_group_by) ->
-        data
-
-      true ->
-        key_fun2 = fn value ->
-          Map.get(value, value_group_by)
-        end
-
-        Enum.reduce(data, %{}, fn {k, v}, acc -> Map.put(acc, k, Enum.group_by(v, key_fun2)) end)
-    end
+    Enum.reduce(lists, %{}, fn {k, v}, acc -> Map.put(acc, k, Enum.group_by(v, key_fun2)) end)
   end
 
   @doc false
