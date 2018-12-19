@@ -150,7 +150,7 @@ defmodule EctoFilter do
 
   def filter_class_assoc(query, %{"class" => val}, join_type, assoc) do
     query
-    |> join(join_type, [t], c in assoc(t, ^assoc), on: c.class == ^val)
+    |> join(join_type, [t], c in assoc(t, ^assoc),  c.class == ^val)
   end
 
   def filter_class_assoc(query, %{"search" => search}, join_type, assoc),
@@ -169,7 +169,7 @@ defmodule EctoFilter do
 
   def filter_state_assoc(query, %{"state" => val}, join_type, assoc) do
     query
-    |> join(join_type, [t], c in assoc(t, ^assoc), on: c.state == ^val)
+    |> join(join_type, [t], c in assoc(t, ^assoc),  c.state == ^val)
   end
 
   def filter_state_assoc(query, %{"search" => search}, join_type, assoc),
@@ -188,7 +188,7 @@ defmodule EctoFilter do
 
   def filter_com_state_assoc(query, %{"com_state" => val}, join_type, assoc) do
     query
-    |> join(join_type, [t], c in assoc(t, ^assoc), on: c.state == ^val)
+    |> join(join_type, [t], c in assoc(t, ^assoc),  c.state == ^val)
   end
 
   def filter_com_state_assoc(query, %{"search" => search}, join_type, assoc),
@@ -207,7 +207,7 @@ defmodule EctoFilter do
 
   def filter_smr_state_assoc(query, %{"smr_state" => val}, join_type, assoc) do
     query
-    |> join(join_type, [t], c in assoc(t, ^assoc), on: c.state == ^val)
+    |> join(join_type, [t], c in assoc(t, ^assoc),  c.state == ^val)
   end
 
   def filter_smr_state_assoc(query, %{"search" => search}, join_type, assoc),
@@ -226,7 +226,7 @@ defmodule EctoFilter do
 
   def filter_by_assoc(query, %{"state" => val}, join_type, assoc) do
     query
-    |> join(join_type, [t], c in assoc(t, ^assoc), on: c.state == ^val)
+    |> join(join_type, [t], c in assoc(t, ^assoc),  c.state == ^val)
   end
 
   def filter_by_assoc(query, %{"search" => search}, join_type, assoc),
