@@ -148,6 +148,11 @@ defmodule EctoFilter do
 
   def filter_class_assoc(query, %{"class" => "all"}, _, _), do: query
 
+  def filter_class_assoc(query, %{"class" => val}, join_type, assoc) when is_list(val) do
+    query
+    |> join(join_type, [t], c in assoc(t, ^assoc), on: c.class in ^val)
+  end
+
   def filter_class_assoc(query, %{"class" => val}, join_type, assoc) do
     query
     |> join(join_type, [t], c in assoc(t, ^assoc), on: c.class == ^val)
@@ -166,6 +171,11 @@ defmodule EctoFilter do
   end
 
   def filter_state_assoc(query, %{"state" => "all"}, _, _), do: query
+
+  def filter_state_assoc(query, %{"state" => val}, join_type, assoc) when is_list(val) do
+    query
+    |> join(join_type, [t], c in assoc(t, ^assoc), on: c.state in ^val)
+  end
 
   def filter_state_assoc(query, %{"state" => val}, join_type, assoc) do
     query
@@ -186,6 +196,11 @@ defmodule EctoFilter do
 
   def filter_com_state_assoc(query, %{"com_state" => "all"}, _, _), do: query
 
+  def filter_com_state_assoc(query, %{"com_state" => val}, join_type, assoc) when is_list(val) do
+    query
+    |> join(join_type, [t], c in assoc(t, ^assoc), on: c.state in ^val)
+  end
+
   def filter_com_state_assoc(query, %{"com_state" => val}, join_type, assoc) do
     query
     |> join(join_type, [t], c in assoc(t, ^assoc), on: c.state == ^val)
@@ -205,6 +220,11 @@ defmodule EctoFilter do
 
   def filter_smr_state_assoc(query, %{"smr_state" => "all"}, _, _), do: query
 
+  def filter_smr_state_assoc(query, %{"smr_state" => val}, join_type, assoc) when is_list(val) do
+    query
+    |> join(join_type, [t], c in assoc(t, ^assoc), on: c.state in ^val)
+  end
+
   def filter_smr_state_assoc(query, %{"smr_state" => val}, join_type, assoc) do
     query
     |> join(join_type, [t], c in assoc(t, ^assoc), on: c.state == ^val)
@@ -215,24 +235,24 @@ defmodule EctoFilter do
 
   def filter_smr_state_assoc(query, _, _, _), do: query
 
-  # 过滤分类
-  def filter_by_assoc(query, %{"state" => "is_null"}, _, assoc) do
-    query
-    |> join(:left, [t], c in assoc(t, ^assoc))
-    |> where([t, c], is_nil(c.state))
-  end
-
-  def filter_by_assoc(query, %{"state" => "all"}, _, _), do: query
-
-  def filter_by_assoc(query, %{"state" => val}, join_type, assoc) do
-    query
-    |> join(join_type, [t], c in assoc(t, ^assoc), on: c.state == ^val)
-  end
-
-  def filter_by_assoc(query, %{"search" => search}, join_type, assoc),
-    do: filter_by_assoc(query, search, join_type, assoc)
-
-  def filter_by_assoc(query, _, _, _), do: query
+  # TODO this function can be common
+#  def filter_by_assoc(query, %{"state" => "is_null"}, _, assoc) do
+#    query
+#    |> join(:left, [t], c in assoc(t, ^assoc))
+#    |> where([t, c], is_nil(c.state))
+#  end
+#
+#  def filter_by_assoc(query, %{"state" => "all"}, _, _), do: query
+#
+#  def filter_by_assoc(query, %{"state" => val}, join_type, assoc) do
+#    query
+#    |> join(join_type, [t], c in assoc(t, ^assoc), on: c.state == ^val)
+#  end
+#
+#  def filter_by_assoc(query, %{"search" => search}, join_type, assoc),
+#    do: filter_by_assoc(query, search, join_type, assoc)
+#
+#  def filter_by_assoc(query, _, _, _), do: query
 
   # 过滤快捷回复id
   def filter_fastreply_id(query, %{"fastreply_id" => search}) do
