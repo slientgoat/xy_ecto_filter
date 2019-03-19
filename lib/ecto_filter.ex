@@ -22,9 +22,8 @@ defmodule EctoFilter do
   @apiSampleRequest off
   @apiParam {Object} [search] 刷选参数:
   @apiParam {Object} search.field1 `field1`和`field1_value`特殊值说明：`is_null:未空|all:全部`（使用参照下列示例）
-  @apiParam {Object} search.scope 时间范围
-  @apiParam {Date} search.scope.startTime 时间开始，格式："2017-1-1"
-  @apiParam {Date} search.scope.endTime 时间结束，格式："2017-12-1"
+  @apiParam {Date} search.startTime 时间开始，格式："2017-1-1"
+  @apiParam {Date} search.endTime 时间结束，格式："2017-12-1"
   @apiParam {Number} search.interval 时间段 <br>
     情况1：`0:今日|-6：最近7天|-29：最近30天`  <br>
     情况2： `-1:昨日|-7：过去7天|-30：过去30天`
@@ -50,7 +49,7 @@ defmodule EctoFilter do
 
   // 获取2017-1-1至2017-12-1未分类的留言记录：以class=is_null为刷选条件，按留言时间降序排序，每次最多显示20行为限制
   {
-    search: {class: "is_null",scope: {startTime: "2017-1-1",endTime: "2017-12-1"}},
+    search: {class: "is_null",startTime: "2017-1-1",endTime: "2017-12-1"},
     sort: {inserted_at: %{order: desc}},
     paginate: {page: 2,page_size: 20}
   }
